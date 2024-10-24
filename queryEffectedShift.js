@@ -12,6 +12,14 @@ where
         'PreOrder')
         AND TR."iscancelled" is not true
         and channel = 2`;
+
+const ErrorType = {
+  orderMissInShift: "orderMissInShift",
+  orderInWrongShift: "orderInWrongShift",
+  wrongPreOrder: "wrongPreOrder",
+  shiftMiss: "shiftMiss",
+  shiftNotClose: "shiftNotClose",
+};
 // 如果要排除未关闭shift的订单，使用modifiedTime>最后一个shift的closeTime
 export function checkOrderWithShift(business, registerId, order, shifts) {
   // 不需要考虑cancelled的订单，因为如果是错误的cancelled订单，那么他只能在一个shift中取消，并不会影响shift的统计
@@ -20,10 +28,11 @@ export function checkOrderWithShift(business, registerId, order, shifts) {
       checkResult.shiftIds = checkResult.shiftIds.filter(Boolean);
       console.log(
         [
-          order.transactionId,
-          order.preOrderId,
           business,
           registerId,
+          order.transactionId,
+          order.receiptNumber,
+          order.preOrderId,
           checkResult.message,
           checkResult.shiftIds.join(","),
         ].join(",")
@@ -44,16 +53,18 @@ export function checkOrderWithShift(business, registerId, order, shifts) {
       !lastShift ||
       new Date(order.modifiedTime) <= new Date(lastShift.closeTime);
     if (isShiftClosed) {
-      console.log(
-        `Error:can not get available shifts of order,${order.transactionId}`
-      );
+      // console.log(
+      //   `Error:can not get available shifts of order,${order.transactionId}`
+      // );
       return onComplete({
-        message: "shiftLost",
+        message: ErrorType.shiftMiss,
+        // message: "shiftLost",
         shiftIds: [],
       });
     } else {
       return onComplete({
-        message: "opening",
+        message: ErrorType.shiftNotClose,
+        // message: "opening",
         shiftIds: [],
       });
     }
@@ -90,11 +101,12 @@ function checkOpenOrderShift(transactionId, paidTime, shifts) {
       (it) => it.shiftId !== correctShiftId
     )[0];
     if (!incorrectShift) {
-      console.log(
-        `Error:can not get the first shift of open order,${transactionId}`
-      );
+      // console.log(
+      //   `Error:can not get the first shift of open order,${transactionId}`
+      // );
       return {
-        message: "lost",
+        // message: "lost",
+        message: ErrorType.orderMissInShift,
         shiftIds: [correctShiftId],
       };
     }
@@ -103,12 +115,14 @@ function checkOpenOrderShift(transactionId, paidTime, shifts) {
     );
     if (!incorrectContains) {
       return {
-        message: "lost",
+        // message: "lost",
+        message: ErrorType.orderMissInShift,
         shiftIds: [correctShiftId],
       };
     } else {
       return {
-        message: "incorrect",
+        // message: "incorrect",
+        message: ErrorType.orderInWrongShift,
         shiftIds: [correctShiftId, incorrectShift.shiftId],
       };
     }
@@ -126,7 +140,8 @@ function checkPreOrderShift(shifts) {
     return null;
   } else {
     return {
-      message: "preOrder regenerate",
+      // message: "incorrectPreOrder",
+      message: ErrorType.wrongPreOrder,
       shiftIds: shifts.map((it) => it.shiftId),
     };
   }

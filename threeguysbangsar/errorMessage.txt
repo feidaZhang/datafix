@@ -1,0 +1,4 @@
+Error:can not get available shifts of order:cc9b35dc-4218-48a4-b464-fc652d922a54,
+cc9b35dc-4218-48a4-b464-fc652d922a54,threeguysbangsar,64c8bd1a07f67d00075193ff,lost,
+cdc03f45-5daa-4f3e-9d7b-b44f65c38b04,threeguysbangsar,64c8bd1a07f67d00075193ff,lost,a0267dbd-6c1a-45bb-aaf0-a30b2f1114b8
+a47e2e31-9e43-48e2-95ea-e7bfe6e2f305,threeguysbangsar,64c8bd1a07f67d00075193ff,lost,a0267dbd-6c1a-45bb-aaf0-a30b2f1114b8

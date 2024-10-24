@@ -1,17 +1,4 @@
-const sql = `SELECT
-transactionId, receiptNumber,preOrderId, createdTime, modifiedTime, storeId, business
-from
-        storehub_mongo.transactionrecords tr
-where
-        tr.createdtime BETWEEN '2024-09-19' and '2024-10-21'  
 
-
-        --(tr.modifiedtime - tr.createdtime) > INTERVAL '1 hours'
-        and tr.modifiedtime <> tr.createdtime
-        AND TR."transactiontype" NOT IN ('Return',
-        'PreOrder')
-        AND TR."iscancelled" is not true
-        and channel = 2`;
 
 const ErrorType = {
     orderMissInShift: 'orderMissInShift',
@@ -20,7 +7,14 @@ const ErrorType = {
     shiftMiss: 'shiftMiss',
     shiftNotClose: 'shiftNotClose',
 };
-// 如果要排除未关闭shift的订单，使用modifiedTime>最后一个shift的closeTime
+/**
+ * main function
+ * @param {*} business 
+ * @param {*} registerId 
+ * @param {*} order 
+ * @param {*} shifts 
+ * @returns 
+ */
 export function checkOrderWithShift(business, registerId, order, shifts) {
     // 不需要考虑cancelled的订单，因为如果是错误的cancelled订单，那么他只能在一个shift中取消，并不会影响shift的统计
     const onComplete = (checkResult) => {
@@ -47,6 +41,7 @@ export function checkOrderWithShift(business, registerId, order, shifts) {
     // 未关闭shift的订单，也需要修正它的createdTime。但是cancelled的订单就不需要考虑了
     if (!availableShifts.length) {
         const lastShift = shifts[0];
+        // 如果要排除未关闭shift的订单，使用createdTime>最后一个shift的closeTime
         const isShiftClosed = lastShift && order.createdTime <= lastShift.closeTime;
         if (isShiftClosed) {
             // console.log(
@@ -151,6 +146,21 @@ function checkShiftByTime(orderTime, shift) {
 function getCorrectShift(orderTime, shifts) {
     return shifts.find((shift) => checkShiftByTime(orderTime, shift));
 }
+
+const sql = `SELECT
+transactionId, receiptNumber,preOrderId, createdTime, modifiedTime, storeId, business
+from
+        storehub_mongo.transactionrecords tr
+where
+        tr.createdtime BETWEEN '2024-09-19' and '2024-10-21'  
+
+
+        --(tr.modifiedtime - tr.createdtime) > INTERVAL '1 hours'
+        and tr.modifiedtime <> tr.createdtime
+        AND TR."transactiontype" NOT IN ('Return',
+        'PreOrder')
+        AND TR."iscancelled" is not true
+        and channel = 2`;
 
 /**
  * main functions
